@@ -64,7 +64,7 @@
 						  url: "http://api.longurl.org/v2/expand",
 						  dataType: 'jsonp',
 						  data: {
-							url: resourceURL,
+							url: (provider.webProxyService) ? provider.webProxyService + window.encodeURIComponent(resourceURL) : resourceURL,
 							format: "json"
 							//callback: "?"
 						  },
@@ -113,7 +113,7 @@
     $.fn.oembed.defaults = {
         maxWidth: null,
         maxHeight: null,
-		includeHandle: true,
+	includeHandle: true,
         embedMethod: 'auto',
         // "auto", "append", "fill"		
         onProviderNotFound: function() {},
@@ -121,7 +121,9 @@
         afterEmbed: function() {},
         onEmbed: false,
         onError: function() {},
-        ajaxOptions: {}
+        ajaxOptions: {},
+        // web service to get urls over HTTP and return them (through HTTPS), e.g. "https://someproxy.com/get?url="
+        webProxyService: null
     };
 
     /* Private functions */
