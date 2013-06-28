@@ -1,5 +1,5 @@
 /*!
- * jquery oembed plugin, lighter
+ * jquery oembed plugin
  *
  * Copyright (c) 2009 Richard Chamorro
  * Licensed under the MIT license
@@ -9,6 +9,7 @@
  * experience
  */
 (function ($) {
+	var $jqoembeddata = $('#jqoembeddata');
 	$.fn.oembed = function (url, options, embedAction) {
 
 		settings = $.extend(true, $.fn.oembed.defaults, options);
@@ -18,15 +19,15 @@
 			$.fn.oembed.providers.push(new $.fn.oembed.OEmbedProvider(this[0], this[1], this[2], this[3], this[4]));
 		});
 
-		//TODO: store in a variable instead of selecting every time
-		if ($('#jqoembeddata').length === 0) {
-			$('<span id="jqoembeddata"></span>').appendTo('body');
+		if ($jqoembeddata.length === 0) {
+			$jqoembeddata = $('<span id="jqoembeddata"></span>');
+			$jqoembeddata.appendTo('body');
 		}
 
 		return this.each(function () {
 
 			var container = $(this),
-				resourceURL = (url && (!url.indexOf('http://') || !url.indexOf('https://'))) ? url : container.attr("href"),
+				resourceURL = (url && /^(https?\:)?\/\//.test(url)) ? url : container.attr("href"),
 				provider;
 
 			if (embedAction) {
@@ -96,6 +97,12 @@
 		maxWidth: null,
 		maxHeight: null,
 		includeHandle: true,
+
+		// template for expand collapse customization
+		toggler: '<span class="oembedall-closehide">&darr;</span>',
+		togglerDown: "&darr;",
+		togglerUp: "&uarr;",
+
 		embedMethod: 'auto',
 		// "auto", "append", "fill"		
 		onProviderNotFound: function () {},
@@ -141,6 +148,7 @@
 				provider.params.maxheight = provider.maxHeight;
 			}
 
+			//TODO: use $.each
 			for (i in provider.params) {
 				if (Object.prototype.hasOwnProperty.call(provider.params, i)) {
 					// We don't want them to jack everything up by changing the callback parameter
@@ -166,16 +174,16 @@
 		},
 
 		success = function (oembedData, externalUrl, container) {
-			$('#jqoembeddata').data(externalUrl, oembedData.code);
+			$jqoembeddata.data(externalUrl, oembedData.code);
 			settings.beforeEmbed.call(container, oembedData);
 			settings.onEmbed.call(container, oembedData);
 			settings.afterEmbed.call(container, oembedData);
 		},
 
 		embedCode = function (container, externalUrl, embedProvider) {
-			if ($('#jqoembeddata').data(externalUrl) !== undefined && $('#jqoembeddata').data(externalUrl) !== null && embedProvider.embedtag.tag !== 'iframe') {
+			if ($jqoembeddata.data(externalUrl) !== undefined && $jqoembeddata.data(externalUrl) !== null && embedProvider.embedtag.tag !== 'iframe') {
 				var oembedData = {
-					code: $('#jqoembeddata').data(externalUrl)
+					code: $jqoembeddata.data(externalUrl)
 				};
 				success(oembedData, externalUrl, container);
 			} else if (embedProvider.yql) {
@@ -362,12 +370,13 @@
 		case "append":
 			container.wrap('<div class="oembedall-container"></div>');
 			var oembedContainer = container.parent();
-			if (settings.includeHandle) {
-				$('<span class="oembedall-closehide">&darr;</span>').insertBefore(container).click(function () {
+			if (settings.includeHandle && settings.toggler) {
+				$(settings.toggler).insertBefore(container).click(function () {
 					var $span = $(this),
-						encodedString = encodeURIComponent($span.text());
+						encodedUp = window.encodeURIComponent($("<i>" + settings.togglerUp + "</i>").text()),
+						encodedString = window.encodeURIComponent($span.text());
 
-					$span.html((encodedString === '%E2%86%91') ? '&darr;' : '&uarr;');
+					$span.html((encodedString === encodedUp) ? settings.togglerDown : settings.togglerUp);
 					$span.parent().children().last().toggle();
 				});
 			}
@@ -379,23 +388,24 @@
 			}
 			/* Make videos semi-responsive
 			 * If parent div width less than embeded iframe video then iframe gets shrunk to fit smaller width
-			 * If parent div width greater thans embed iframe use the max widht
+			 * If parent div width greater thans embed iframe use the max width
 			 * - works on youtubes and vimeo
 			 */
 			if (settings.maxWidth) {
 				var post_width = oembedContainer.parent().width();
+				var $iframe = $('iframe', oembedContainer);
 				if (post_width < settings.maxWidth) {
-					var iframe_width_orig = $('iframe', oembedContainer).width();
-					var iframe_height_orig = $('iframe', oembedContainer).height();
+					var iframe_width_orig = $iframe.width();
+					var iframe_height_orig = $iframe.height();
 					var ratio = iframe_width_orig / post_width;
-					$('iframe', oembedContainer).width(iframe_width_orig / ratio);
-					$('iframe', oembedContainer).height(iframe_height_orig / ratio);
+					$iframe.width(iframe_width_orig / ratio);
+					$iframe.height(iframe_height_orig / ratio);
 				} else {
 					if (settings.maxWidth) {
-						$('iframe', oembedContainer).width(settings.maxWidth);
+						$iframe.width(settings.maxWidth);
 					}
 					if (settings.maxHeight) {
-						$('iframe', oembedContainer).height(settings.maxHeight);
+						$iframe.height(settings.maxHeight);
 					}
 				}
 			}
