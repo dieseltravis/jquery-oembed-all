@@ -1,6 +1,6 @@
 /*!
  * jquery oembed plugin
- *
+ * custom branch: https://github.com/dieseltravis/jquery-oembed-all/tree/patch-1
  * Copyright (c) 2009 Richard Chamorro
  * Licensed under the MIT license
  *
